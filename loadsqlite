@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Check that correct number of arguments is provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <directory> <database_file>"
+    exit 1
+fi
+
+DIRECTORY="$1"
+DATABASE="$2"
+
+# Change to the specified directory
+cd "$DIRECTORY" || { echo "Directory not found"; exit 1; }
+
+# Loop through each .csv file in the directory
+shopt -s nullglob  # To handle cases where directory has no CSV files
+for file in *.csv; do
+    # Get the base filename (without extension) and convert to lowercase
+    filename="${file%.csv}"     # Remove the .csv extension
+    tablename=$(echo "$filename" | tr '[:upper:]' '[:lower:]')  # Convert to lowercase
+
+    # Create the table based on the CSV headers. Use '.mode csv' first to set the mode.
+    sqlite3 "$DATABASE" <<EOF
+.mode csv
+.header on
+.import '$file' '$tablename'
+EOF
+
+    echo "Imported $file into $tablename table."
+done
+
+echo "All CSV files have been processed."
